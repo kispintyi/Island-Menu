@@ -1,7 +1,5 @@
 package com.mosadie.islandmenu.mccapi;
 
-import com.mosadie.islandmenu.client.IslandMenuClient;
-
 import java.util.UUID;
 
 public class ParticipantsInfo {
