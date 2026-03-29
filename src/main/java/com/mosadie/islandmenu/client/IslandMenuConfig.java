@@ -1,6 +1,5 @@
 package com.mosadie.islandmenu.client;
 
-import com.mosadie.islandmenu.client.IslandMenuClient;
 import com.mosadie.islandmenu.mccapi.Teams;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;

@@ -1,6 +1,6 @@
 package com.mosadie.islandmenu.client.theme;
 
-import com.mosadie.servermainmenu.api.Util;
+import com.mosadie.simplemainmenu.api.Util;
 
 public class WinterTheme extends NormalTheme {
     @Override

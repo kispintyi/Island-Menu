@@ -1,10 +1,11 @@
 package com.mosadie.islandmenu.client.theme;
 
 import com.mosadie.islandmenu.client.IslandMenuClient;
-import com.mosadie.servermainmenu.api.MenuTheme;
-import com.mosadie.servermainmenu.api.Util;
-import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
+import com.mosadie.simplemainmenu.api.MenuTheme;
+import com.mosadie.simplemainmenu.api.SplashText;
+import com.mosadie.simplemainmenu.api.Util;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.Identifier;
 
 public class NormalTheme implements MenuTheme {
     @Override
@@ -14,17 +15,17 @@ public class NormalTheme implements MenuTheme {
 
     @Override
     public Identifier getPanorama() {
-        return Identifier.of(IslandMenuClient.MOD_ID, "textures/gui/title/background/"+ getId() + "/panorama");
+        return Identifier.fromNamespaceAndPath(IslandMenuClient.MOD_ID, "textures/gui/title/background/"+ getId() + "/panorama");
     }
 
     @Override
-    public String getSplashText() {
+    public SplashText getSplashText() {
         return IslandMenuClient.getSplashText();
     }
 
     @Override
-    public Text getQuickJoinButtonText() {
-        return Text.translatable("island-menu.menu.join");
+    public Component getQuickJoinButtonComponent() {
+        return Component.translatable("island-menu.menu.join");
     }
 
     @Override

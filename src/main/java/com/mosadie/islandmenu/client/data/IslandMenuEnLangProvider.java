@@ -1,19 +1,19 @@
 package com.mosadie.islandmenu.client.data;
 
-import net.fabricmc.fabric.api.datagen.v1.FabricDataOutput;
+import net.fabricmc.fabric.api.datagen.v1.FabricPackOutput;
 import net.fabricmc.fabric.api.datagen.v1.provider.FabricLanguageProvider;
-import net.minecraft.registry.RegistryWrapper;
+import net.minecraft.core.HolderLookup;
 
 import java.util.concurrent.CompletableFuture;
 
 public class IslandMenuEnLangProvider extends FabricLanguageProvider {
 
-    protected IslandMenuEnLangProvider(FabricDataOutput dataOutput, CompletableFuture<RegistryWrapper.WrapperLookup> registryLookup) {
-        super(dataOutput, registryLookup);
+    protected IslandMenuEnLangProvider(FabricPackOutput packOutput, CompletableFuture<HolderLookup.Provider> registryLookup) {
+        super(packOutput, registryLookup);
     }
 
     @Override
-    public void generateTranslations(RegistryWrapper.WrapperLookup wrapperLookup, TranslationBuilder translationBuilder) {
+    public void generateTranslations(HolderLookup.Provider registryLookup, TranslationBuilder translationBuilder) {
         translationBuilder.add("island-menu.menu.join", "Join MCC Island!");
 
         translationBuilder.add("text.autoconfig.island-menu.title", "Island Menu Settings");
@@ -23,6 +23,5 @@ public class IslandMenuEnLangProvider extends FabricLanguageProvider {
 
         translationBuilder.add("text.autoconfig.island-menu.option.devOptions", "Developer Settings");
         translationBuilder.add("text.autoconfig.island-menu.option.devOptions.apiUrl", "MCC API Base URL");
-
     }
 }

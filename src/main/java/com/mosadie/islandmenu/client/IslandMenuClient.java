@@ -7,17 +7,17 @@ import com.mosadie.islandmenu.mccapi.EventInfo;
 import com.mosadie.islandmenu.mccapi.MCCApi;
 import com.mosadie.islandmenu.mccapi.ParticipantsInfo;
 import com.mosadie.islandmenu.mccapi.Teams;
-import com.mosadie.servermainmenu.client.ServerMainMenuLibClient;
+import com.mosadie.simplemainmenu.api.SplashText;
+import com.mosadie.simplemainmenu.client.SimpleMainMenuLibClient;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ClientModInitializer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.registry.Registry;
-import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.math.random.Random;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.Registry;
+import net.minecraft.resources.Identifier;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.InteractionResult;
 import org.apache.commons.lang3.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,8 +62,9 @@ public class IslandMenuClient implements ClientModInitializer {
             "Support the %s!"
     };
 
-    public static String getSplashText() {
-        String splash =  splashOptions[Random.create().nextBetweenExclusive(0, splashOptions.length)];
+    public static SplashText getSplashText() {
+        String splash =  splashOptions[RandomSource.create().nextInt(0, splashOptions.length)];
+        SplashText.Builder splashTextBuilder = SplashText.builder();
 
         switch(splash) {
             case MCC_DATE_SPLASH:
@@ -71,14 +72,15 @@ public class IslandMenuClient implements ClientModInitializer {
                     EventInfo eventInfo = mccApi.getEventInfo();
                     if (eventInfo != null) {
                         if (eventInfo.getData().getDate().after(new Date())) {
-                            String dateString = new SimpleDateFormat("MMMM dd").format(eventInfo.getData().getDate());
-                            return String.format("Watch MCC %s on %s!", eventInfo.getData().getEvent(), dateString);
+                            String dateString = new SimpleDateFormat("MMMM dd 'at' h:mm a z").format(eventInfo.getData().getDate());
+                            splashTextBuilder.addLine(String.format("Watch MCC %s on", eventInfo.getData().getEvent()));
+                            splashTextBuilder.addLine(String.format("%s!", dateString));
                         } else {
-                            return String.format("What did you think of MCC %s?", eventInfo.getData().getEvent());
+                            splashTextBuilder.addLine(String.format("What did you think of MCC %s?", eventInfo.getData().getEvent()));
                         }
                     }
                 }
-                return splashOptions[0];
+                return splashTextBuilder.build();
 
             case MCC_PLAYER_SPLASH:
                 if (mccApi != null) {
@@ -87,7 +89,7 @@ public class IslandMenuClient implements ClientModInitializer {
                     if (participantsInfo != null) {
                         ParticipantsInfo.ParticipantsData.Participant player = null;
 
-                        ParticipantsInfo.ParticipantsData.Participant selfPlayer = participantsInfo.getPlayer(MinecraftClient.getInstance().getSession().getUuidOrNull());
+                        ParticipantsInfo.ParticipantsData.Participant selfPlayer = participantsInfo.getPlayer(Minecraft.getInstance().getGameProfile().id());
                         if (selfPlayer != null) {
                             LOGGER.debug("MCC Player found! Picking them always for splash text.");
                             player = selfPlayer;
@@ -109,23 +111,30 @@ public class IslandMenuClient implements ClientModInitializer {
                                 }
                             }
 
-                            if (player == null)
-                                return splashOptions[0];
+                            if (player == null) {
+                                splashTextBuilder.addLine(splashOptions[0]);
+                                return splashTextBuilder.build();
+                            }
                         }
 
-                        if (player == null || player.getUsername() == null)
-                            return splashOptions[0];
+                        if (player == null || player.getUsername() == null) {
+                            splashTextBuilder.addLine(splashOptions[0]);
+                            return splashTextBuilder.build();
+                        }
+
+                        splashTextBuilder.addLine(String.format("Check out %s", player.getUsername()));
 
                         EventInfo eventInfo = mccApi.getEventInfo();
-                        String eventString = "";
                         if (eventInfo != null && eventInfo.getData().getDate().after(new Date())) {
-                            eventString = " in MCC " + eventInfo.getData().getEvent();
+                            splashTextBuilder.addLine(String.format("in MCC %s!", eventInfo.getData().getEvent()));
                         }
-                        return String.format("Check out %s!", player.getUsername() + eventString);
+
+                        return splashTextBuilder.build();
                     }
                 }
 
-                return splashOptions[0];
+                splashTextBuilder.addLine(splashOptions[0]);
+                return splashTextBuilder.build();
 
             case MCC_TEAM_SPLASH:
                 Teams team = null;
@@ -135,8 +144,8 @@ public class IslandMenuClient implements ClientModInitializer {
                 }
 
                 // If player is in the next/most recent MCC, pick their team.
-                if ((team == null || team.equals(Teams.NONE)) && mccApi != null && mccApi.getParticipantsInfo() != null && MinecraftClient.getInstance().getSession().getUuidOrNull() != null) {
-                    Teams selfTeam = mccApi.getParticipantsInfo().getPlayerTeam(MinecraftClient.getInstance().getSession().getUuidOrNull());
+                if ((team == null || team.equals(Teams.NONE)) && mccApi != null && mccApi.getParticipantsInfo() != null && Minecraft.getInstance().getGameProfile().id() != null) {
+                    Teams selfTeam = mccApi.getParticipantsInfo().getPlayerTeam(Minecraft.getInstance().getGameProfile().id());
                     if (!selfTeam.equals(Teams.NONE)) {
                         LOGGER.debug("MCC Player team found!");
                         team = selfTeam;
@@ -149,26 +158,15 @@ public class IslandMenuClient implements ClientModInitializer {
 
                 String teamString = teamSplashOptions[RandomUtils.nextInt(0, teamSplashOptions.length)];
 
-                return String.format(teamString, team.getName());
+                splashTextBuilder.addLine(String.format(teamString, team.getName()));
+                return splashTextBuilder.build();
 
             default:
-                return splash;
+                return splashTextBuilder.addLine(splash).build();
         }
     }
 
     private static IslandMenuConfig config;
-
-    public static Text getButtonText() {
-        return Text.translatable("island-menu.menu.join");
-    }
-
-    public static String getButtonServerName() {
-        return "MCC Island";
-    }
-
-    public static String getButtonServerAddress() {
-        return "play.mccisland.net";
-    }
 
     @Override
     public void onInitializeClient() {
@@ -176,9 +174,9 @@ public class IslandMenuClient implements ClientModInitializer {
 
         LOGGER.info("Registering Theme...");
 
-        Registry.register(ServerMainMenuLibClient.registry, Identifier.of(IslandMenuClient.MOD_ID, "normal"), normalTheme);
-        Registry.register(ServerMainMenuLibClient.registry, Identifier.of(IslandMenuClient.MOD_ID, "halloween"), halloweenTheme);
-        Registry.register(ServerMainMenuLibClient.registry, Identifier.of(IslandMenuClient.MOD_ID, "winter"), winterTheme);
+        Registry.register(SimpleMainMenuLibClient.registry, Identifier.fromNamespaceAndPath(IslandMenuClient.MOD_ID, "normal"), normalTheme);
+        Registry.register(SimpleMainMenuLibClient.registry, Identifier.fromNamespaceAndPath(IslandMenuClient.MOD_ID, "halloween"), halloweenTheme);
+        Registry.register(SimpleMainMenuLibClient.registry, Identifier.fromNamespaceAndPath(IslandMenuClient.MOD_ID, "winter"), winterTheme);
 
         LOGGER.info("Configuring Config...");
 
@@ -200,7 +198,7 @@ public class IslandMenuClient implements ClientModInitializer {
         LOGGER.info("Island Menu Initialized!");
     }
 
-    private static ActionResult onConfigSave(ConfigHolder<IslandMenuConfig> islandMenuConfigConfigHolder, IslandMenuConfig islandMenuConfig) {
+    private static InteractionResult onConfigSave(ConfigHolder<IslandMenuConfig> islandMenuConfigConfigHolder, IslandMenuConfig islandMenuConfig) {
         LOGGER.info("Updating config!");
 
 //        config = islandMenuConfig;
@@ -208,6 +206,6 @@ public class IslandMenuClient implements ClientModInitializer {
         if (mccApi == null || !mccApi.getBaseUrl().equalsIgnoreCase(config.devOptions.apiUrl))
             mccApi = new MCCApi(config.devOptions.apiUrl);
 
-        return ActionResult.PASS;
+        return InteractionResult.PASS;
     }
 }
