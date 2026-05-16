@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "com.mosadie.islandmenu.client.mixin",
+  "compatibilityLevel": "JAVA_25",
+  "client": [
+    "ConnectScreenMixin",
+    "LevelLoadingScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
