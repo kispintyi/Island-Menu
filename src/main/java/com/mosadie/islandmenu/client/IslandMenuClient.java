@@ -13,7 +13,11 @@ import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigHolder;
 import me.shedaniel.autoconfig.serializer.GsonConfigSerializer;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.RenderPipelines;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.RandomSource;
@@ -26,6 +30,7 @@ import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 public class IslandMenuClient implements ClientModInitializer {
@@ -167,6 +172,10 @@ public class IslandMenuClient implements ClientModInitializer {
     }
 
     private static IslandMenuConfig config;
+    private static final Identifier MCCI_JOIN_LOGO = Identifier.fromNamespaceAndPath(MOD_ID, "textures/joingui/mccisland_joinlogo.png");
+    private static final int MCCI_JOIN_LOGO_TEXTURE_WIDTH = 4000;
+    private static final int MCCI_JOIN_LOGO_TEXTURE_HEIGHT = 1746;
+    private static boolean joiningMcciServer;
 
     @Override
     public void onInitializeClient() {
@@ -177,6 +186,8 @@ public class IslandMenuClient implements ClientModInitializer {
         Registry.register(SimpleMainMenuLibClient.registry, Identifier.fromNamespaceAndPath(IslandMenuClient.MOD_ID, "normal"), normalTheme);
         Registry.register(SimpleMainMenuLibClient.registry, Identifier.fromNamespaceAndPath(IslandMenuClient.MOD_ID, "halloween"), halloweenTheme);
         Registry.register(SimpleMainMenuLibClient.registry, Identifier.fromNamespaceAndPath(IslandMenuClient.MOD_ID, "winter"), winterTheme);
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> joiningMcciServer = false);
 
         LOGGER.info("Configuring Config...");
 
@@ -196,6 +207,48 @@ public class IslandMenuClient implements ClientModInitializer {
 
 
         LOGGER.info("Island Menu Initialized!");
+    }
+
+    public static void setJoiningServerIp(String serverIp) {
+        joiningMcciServer = isMcciIslandServer(serverIp);
+    }
+
+    public static void extractMcciJoinLogo(Screen screen, GuiGraphicsExtractor graphics) {
+        if (!shouldShowMcciJoinLogo(Minecraft.getInstance())) {
+            return;
+        }
+
+        int logoWidth = Math.min(200, Math.max(80, screen.width - 40));
+        int logoHeight = Math.round(logoWidth * (MCCI_JOIN_LOGO_TEXTURE_HEIGHT / (float) MCCI_JOIN_LOGO_TEXTURE_WIDTH));
+        int x = screen.width / 2 - logoWidth / 2;
+        int y = Math.max(18, screen.height / 2 - 50 - logoHeight - 16);
+
+        graphics.blit(RenderPipelines.GUI_TEXTURED, MCCI_JOIN_LOGO, x, y, 0.0F, 0.0F, logoWidth, logoHeight, MCCI_JOIN_LOGO_TEXTURE_WIDTH, MCCI_JOIN_LOGO_TEXTURE_HEIGHT, MCCI_JOIN_LOGO_TEXTURE_WIDTH, MCCI_JOIN_LOGO_TEXTURE_HEIGHT);
+    }
+
+    private static boolean shouldShowMcciJoinLogo(Minecraft client) {
+        if (client.getCurrentServer() != null) {
+            return isMcciIslandServer(client.getCurrentServer().ip);
+        }
+
+        return joiningMcciServer;
+    }
+
+    private static boolean isMcciIslandServer(String serverIp) {
+        if (serverIp == null) {
+            return false;
+        }
+
+        String host = serverIp.toLowerCase(Locale.ROOT).trim();
+        int portStart = host.indexOf(':');
+        if (portStart >= 0) {
+            host = host.substring(0, portStart);
+        }
+        if (host.endsWith(".")) {
+            host = host.substring(0, host.length() - 1);
+        }
+
+        return host.equals("mccisland.net") || host.endsWith(".mccisland.net");
     }
 
     private static InteractionResult onConfigSave(ConfigHolder<IslandMenuConfig> islandMenuConfigConfigHolder, IslandMenuConfig islandMenuConfig) {
