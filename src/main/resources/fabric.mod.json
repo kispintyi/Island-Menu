@@ -26,6 +26,9 @@
       "com.mosadie.islandmenu.client.IslandMenuModMenuIntegration"
     ]
   },
+  "mixins": [
+    "island-menu.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.18.0",
     "fabric-api": ">=0.144.3",
